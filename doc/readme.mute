@@ -1,0 +1,137 @@
+MUTE documentation, last updated on 25 May 2010
+
+Mutes provide a way of allowing operators to completely silence a
+user on the network, and work exactly like G-lines in the way they
+are set, manipulated, destroyed, bursted, and propagated. However,
+rather than being disconnected from the network, muted users remain
+on the network and cannot send any private messages or notices,
+cannot speak in or notice any channels, cannot set any topics,
+cannot change nicknames, their PART and QUIT messages, if
+provided, will not be displayed to anyone. Further, muted users
+do not receive any error messages upon attempting any of these
+actions and thus will likely never know they are muted. This approach
+to silencing users on a global scale, completely unannounced, is
+aimed at reducing the risk and annoyance of attempted retaliation
+against users and operators, and ban and/or G-line evasion.
+
+For an ordinary user, the syntax is:
+
+  MUTE [<mask>]
+
+If <mask> is given, and if a mute for that server exists, all the
+information about that mute is displayed.  If <mask> is not given,
+an error is returned.
+
+For an operator, the syntax is:
+
+  MUTE [[!][+|-|>|<]<mask> [<target>] [<expiration> [:<reason>]]]
+
+There are a total of 10 basic forms of the MUTE command.  If no
+arguments are given, all existing mutes will be listed; if only
+<mask> is given, the behavior is the same as for an ordinary user.
+The remaining forms allow mutes to be set, manipulated, or possibly
+destroyed.
+
+* Local mutes.
+
+Opers may set or remove mutes that only apply to a specific server.
+When the <target> parameter is not given, the specific server will be
+the local server; otherwise, it will be taken to be a remote server,
+and the mute operations will take place there, if the oper has the
+MUTE privilege.  When <mask> is preceded with the '+' character, the
+mute will be added, and <expiration> and <reason> are required; when
+<mask> is preceded with the '-' character, the mute will be removed,
+and <expiration> and <reason> are not required.  The '<' and '>'
+character prefixes are not valid for local mutes.
+
+* Local modifications to global mutes.
+
+Opers may locally activate or deactivate global mutes.  In this
+mode, <mask> is interpreted as referencing an existing mute, and
+will be preceded by either '<' (to locally deactivate the mute) or
+'>' (to locally activate the mute).  This local state overrides the
+global state of the mute, and persists until there is a global state
+change to the mute, or until the mute expires.  The <expiration>
+and <reason> arguments are not required, but <target> may be given if
+the oper desires to make the appropriate change on a remote
+server--note that the oper will need the MUTE privilege for this.
+
+* Global mutes.
+
+Opers may, if they have the MUTE privilege, set and manipulate global
+mutes on the network.  To create a new mute, the oper must prefix
+the <mask> with either '+' (for globally activated mutes) or '-'
+(for globally deactivated mutes).  Additionally, <target> must be
+given as "*", and the <expiration> and <reason> parameters are
+required.  If the mute already exists, it will be modified to match
+the new global status, <expiration>, and <reason>.
+
+When the mute already exists, an oper may activate or deactivate it
+simply by setting <target> to "*" and prefixing the <mask> with either
+"+" (to activate the mute) or "-" (to deactivate it).  If it is
+desired to simply modify the expiration time or reason, without
+changing the activation status, specify <mask> without any prefix, set
+<target> to "*", and provide the updated <expire> and optionally an
+updated <reason>.
+
+* Privilege notes.
+
+Note that, for all locally-restricted mute changes, such as locally
+activating a mute or creating a local mute, the oper must have the
+LOCAL_MUTE privilege.  For any other mute change, including
+locally-restricted changes on remote servers, the server's
+CONFIG_OPERCMDS privilege must be enabled and the oper must have the
+MUTE privilege.  There are also restrictions to prevent an oper from
+setting a mute that is too wide; in some cases, those restrictions
+may be overridden by prefixing the <mask> parameter with the "!"
+character, IF the operator has the WIDE_MUTE privilege.
+
+For a server, the syntax is:
+
+  <prefix> MT <target> [!][+|-|>|<]<mask> [<expiration>] [<lastmod>]
+	[<lifetime>] [:<reason>]
+
+There are a total of 8 basic forms of the MT command.  The primary
+innovation is the addition of the <lifetime> parameter, which
+specifies a lifetime for the mute record which may be longer than
+the expiration time.  <lifetime> will be monotonically increasing,
+enabling <expiration> to be modified in any way desirable.
+
+* Local mutes.
+
+Remote servers, or opers on them, may remotely set local mutes on
+the local server.  To create a local mute, <target> will be set to
+the numeric of the local server, and <mask> must be preceded by '+'
+(optionally preceded by '!' if the origin desires to override some
+safety settings).  The <expiration> and <reason> parameters are
+required.  The <lastmod> and <lifetime> parameters will be ignored if
+present.  Removing local mutes is similar--<mask> must be
+preceded by '-', and all other parameters are ignored to allow
+backwards compatibility.
+
+* Local modifications to global mutes.
+
+Remote servers, or opers on them, may also locally activate or
+deactivate a global mute on the local server.  The <target> must be
+set to the numeric of the local server, and <mask> must be preceded by
+either '<' (to locally deactivate the mute) or '>' (to locally
+activate the mute).  This local state overrides the global state of
+the mute, and persists until there is a global state change to the
+mute, or until the mute expires.  No other parameters are
+necessary in this mode, and will be ignored if present.
+
+* Global mutes.
+
+For creation and manipulation of global mutes, the <target>
+parameter must be set to "*".  If the mute does not exist, and if
+<expiration> is given, the mute will be created with the specified
+expiration and <reason> (the latter defaulting to "No reason" if not
+present).  Otherwise, the mute will be updated according to the
+available parameters.  The rules are similar to those for oper-issued
+global mutes, with the addition of a <lastmod> parameter, which is a
+monotonically increasing serial number for the mute, and an optional
+<lifetime> parameter that specifies a monotonically increasing
+lifetime for the mute record.  Note that, for existing mutes where
+only state changes (global activation or deactivation) are necessary,
+only <lastmod> is required; <expiration> must be specified for all
+other forms of the MT command.
